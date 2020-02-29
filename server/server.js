@@ -1,0 +1,35 @@
+const express = require("express");
+const path = require("path");
+const PORT = process.env.PORT || 3001;
+const app = express();
+const cors = require("cors");
+const mongoose = require("mongoose");
+const apiRoutes = require("./routes/apiRoutes");
+const passport = require("passport")
+const dotenv = require("dotenv");
+dotenv.config();
+var session = require("express-session");
+// Serve up static assets (keroku/aws/etc...)
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static("client/build"));
+}
+app.use(session({ secret: process.env.PASSPORT_SECRET, resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(cors());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use("/api", apiRoutes)
+mongoose.connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/mern-template", {useNewUrlParser: true});
+const connection = mongoose.connection;
+connection.once("open", function() {
+  console.log("MongoDB database connection established successfully")
+})
+// Send every request to the React app
+// Define any API routes before this runs
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, "./client/build/index.html"));
+});
+app.listen(PORT, function() {
+  console.log(`API server now on port ${PORT}!`);
+});
